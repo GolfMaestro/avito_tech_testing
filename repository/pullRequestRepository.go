@@ -62,3 +62,24 @@ func getNewReviewers(newPullRequest models.PullRequest) []string {
 
 	return reviewers
 }
+
+func MergeRequestInDB(merger_request_id string) {
+
+	var tempStatus string
+
+	err1 := Pool.QueryRow(context.Background(),
+		"SELECT status FROM pull_requests WHERE pull_request_id = $1", merger_request_id).Scan(&tempStatus)
+
+	if err1 != nil {
+		fmt.Println("Something went wrong in function MergeRequestInDB")
+	}
+
+	if tempStatus == "OPEN" {
+		_, err := Pool.Exec(context.Background(),
+			"UPDATE pull_requests SET status = 'MERGED', merged_at = NOW() WHERE pull_request_id = $1;", merger_request_id)
+
+		if err != nil {
+			fmt.Println("Something went wrong in function MergeRequestInDB")
+		}
+	}
+}

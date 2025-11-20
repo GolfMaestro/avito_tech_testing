@@ -14,6 +14,7 @@ func mainController() {
 	http.HandleFunc("/users/getReview", service.GetUserReviews)
 
 	http.HandleFunc("/pullRequest/create", service.CreatePullRequest)
+	http.HandleFunc("/pullRequest/merge", service.MergeRequest)
 
 	http.HandleFunc("/team/get", service.GetTeamMembers)
 	http.HandleFunc("/team/add", service.CreateNewTeam)
