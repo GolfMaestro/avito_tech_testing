@@ -8,6 +8,20 @@ import (
 
 func AddPullRequestInDB(newPullRequest models.PullRequest) {
 
+	reviewers := getNewReviewers(newPullRequest)
+
+	_, err := Pool.Exec(context.Background(),
+		"INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ($1, $2, $3, $4);",
+		newPullRequest.PullRequestID, newPullRequest.PullRequestName, newPullRequest.AuthorID, reviewers)
+
+	if err != nil {
+		fmt.Println("Something went wrong in funciton InsertNewPersonInDB")
+	}
+
+}
+
+func getNewReviewers(newPullRequest models.PullRequest) []string {
+
 	var authorTeam string
 
 	err1 := Pool.QueryRow(context.Background(),
@@ -46,12 +60,5 @@ func AddPullRequestInDB(newPullRequest models.PullRequest) {
 		fmt.Println("Something went wrong in function GetUsersFromDB")
 	}
 
-	_, err := Pool.Exec(context.Background(),
-		"INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ($1, $2, $3, $4);",
-		newPullRequest.PullRequestID, newPullRequest.PullRequestName, newPullRequest.AuthorID, reviewers)
-
-	if err != nil {
-		fmt.Println("Something went wrong in funciton InsertNewPersonInDB")
-	}
-
+	return reviewers
 }
