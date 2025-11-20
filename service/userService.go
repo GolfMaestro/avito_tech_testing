@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func UpdatePersonStatus(w http.ResponseWriter, r *http.Request) {
+func UpdateUserStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method is not allowed", http.StatusMethodNotAllowed)
 		return
@@ -22,7 +22,7 @@ func UpdatePersonStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repository.UpdatePersonStatus(updates.UserID, updates.IsActive)
+	repository.UpdateUserStatus(updates.UserID, updates.IsActive)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

@@ -10,7 +10,7 @@ func mainController() {
 
 	http.HandleFunc("/main", mainPageHandler)
 
-	http.HandleFunc("/users/setIsActive", service.UpdatePersonStatus)
+	http.HandleFunc("/users/setIsActive", service.UpdateUserStatus)
 
 	http.HandleFunc("/pullRequest/create", service.CreatePullRequest)
 

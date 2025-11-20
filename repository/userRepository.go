@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func UpdatePersonStatus(req_id string, new_status bool) {
+func UpdateUserStatus(req_id string, new_status bool) {
 
 	_, err := Pool.Exec(context.Background(),
 		"UPDATE users SET is_active = $1 WHERE user_id = $2", new_status, req_id)
