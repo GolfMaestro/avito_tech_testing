@@ -32,19 +32,7 @@ func getNewReviewers(author_id string) []string {
 		fmt.Println("Something went wrong in function GetUsersFromDB")
 	}
 
-	rows, err2 := Pool.Query(context.Background(),
-		"SELECT user_id FROM users WHERE team_name = $1 AND is_active = true AND user_id != $2;", authorTeam, author_id)
-
-	var userIDs []string
-
-	for rows.Next() {
-		var t string
-		temp_err := rows.Scan(&t)
-		if temp_err != nil {
-			fmt.Println("Something went wrong in loop")
-		}
-		userIDs = append(userIDs, t)
-	}
+	userIDs := getActiveTeamMembersIds(authorTeam, author_id)
 
 	var reviewers []string
 
@@ -55,10 +43,6 @@ func getNewReviewers(author_id string) []string {
 		reviewers = []string{userIDs[0]}
 	case 2:
 		reviewers = []string{userIDs[0], userIDs[1]}
-	}
-
-	if err2 != nil {
-		fmt.Println("Something went wrong in function GetUsersFromDB")
 	}
 
 	return reviewers
@@ -104,23 +88,7 @@ func ReassignRequestInDB(pullRequestID string, oldReviewerID string) {
 		fmt.Println("Something went wrong in function err1")
 	}
 
-	rows, err2 := Pool.Query(context.Background(),
-		"SELECT user_id FROM users WHERE team_name = $1 AND is_active = true AND user_id != $2;", authorTeam, author_id)
-
-	if err2 != nil {
-		fmt.Println("Something went wrong in function err2")
-	}
-
-	var userIDs []string
-
-	for rows.Next() {
-		var t string
-		temp_err := rows.Scan(&t)
-		if temp_err != nil {
-			fmt.Println("Something went wrong in loop")
-		}
-		userIDs = append(userIDs, t)
-	}
+	userIDs := getActiveTeamMembersIds(authorTeam, author_id)
 
 	var a_reviewers []string
 
@@ -152,4 +120,27 @@ func ReassignRequestInDB(pullRequestID string, oldReviewerID string) {
 		fmt.Println("Something went wrong in function err5")
 	}
 
+}
+
+func getActiveTeamMembersIds(author_team string, author_id string) []string {
+
+	rows, err := Pool.Query(context.Background(),
+		"SELECT user_id FROM users WHERE team_name = $1 AND is_active = true AND user_id != $2;", author_team, author_id)
+
+	if err != nil {
+		fmt.Println("Something went wrong in function getActiveTeamMembersIds")
+	}
+
+	var userIDs []string
+
+	for rows.Next() {
+		var t string
+		temp_err := rows.Scan(&t)
+		if temp_err != nil {
+			fmt.Println("Something went wrong in loop in getActiveTeamMembersIds")
+		}
+		userIDs = append(userIDs, t)
+	}
+
+	return userIDs
 }
