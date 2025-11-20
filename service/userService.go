@@ -1,6 +1,7 @@
 package service
 
 import (
+	"avito_tech_testing/dto"
 	"avito_tech_testing/repository"
 	"encoding/json"
 	"net/http"
@@ -26,5 +27,24 @@ func UpdateUserStatus(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+
+}
+
+func GetUserReviews(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method is not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	user_id := r.URL.Query().Get("user_id")
+
+	var pullRequests []dto.PullRequestShort
+
+	pullRequests = repository.GetUserReviewsFromDB(user_id)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(pullRequests)
 
 }
