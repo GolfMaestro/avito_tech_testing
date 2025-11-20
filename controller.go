@@ -14,6 +14,8 @@ func mainController() {
 
 	http.HandleFunc("/pullRequest/create", service.CreatePullRequest)
 
+	http.HandleFunc("/team/get", service.GetTeamMembers)
+
 }
 
 func mainPageHandler(w http.ResponseWriter, r *http.Request) {
