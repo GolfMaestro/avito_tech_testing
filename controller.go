@@ -12,6 +12,8 @@ func mainController() {
 
 	http.HandleFunc("/users/setIsActive", service.UpdatePersonStatus)
 
+	http.HandleFunc("/pullRequest/create", service.CreatePullRequest)
+
 }
 
 func mainPageHandler(w http.ResponseWriter, r *http.Request) {
