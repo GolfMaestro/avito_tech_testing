@@ -4,11 +4,12 @@ import (
 	"avito_tech_testing/models"
 	"context"
 	"fmt"
+	"slices"
 )
 
 func AddPullRequestInDB(newPullRequest models.PullRequest) {
 
-	reviewers := getNewReviewers(newPullRequest)
+	reviewers := getNewReviewers(newPullRequest.AuthorID)
 
 	_, err := Pool.Exec(context.Background(),
 		"INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ($1, $2, $3, $4);",
@@ -20,19 +21,19 @@ func AddPullRequestInDB(newPullRequest models.PullRequest) {
 
 }
 
-func getNewReviewers(newPullRequest models.PullRequest) []string {
+func getNewReviewers(author_id string) []string {
 
 	var authorTeam string
 
 	err1 := Pool.QueryRow(context.Background(),
-		"SELECT team_name FROM users WHERE user_id = $1", newPullRequest.AuthorID).Scan(&authorTeam)
+		"SELECT team_name FROM users WHERE user_id = $1", author_id).Scan(&authorTeam)
 
 	if err1 != nil {
 		fmt.Println("Something went wrong in function GetUsersFromDB")
 	}
 
 	rows, err2 := Pool.Query(context.Background(),
-		"SELECT user_id FROM users WHERE team_name = $1 AND is_active = true AND user_id != $2;", authorTeam, newPullRequest.AuthorID)
+		"SELECT user_id FROM users WHERE team_name = $1 AND is_active = true AND user_id != $2;", authorTeam, author_id)
 
 	var userIDs []string
 
@@ -82,4 +83,73 @@ func MergeRequestInDB(merger_request_id string) {
 			fmt.Println("Something went wrong in function MergeRequestInDB")
 		}
 	}
+}
+
+func ReassignRequestInDB(pullRequestID string, oldReviewerID string) {
+
+	var authorTeam string
+
+	var author_id string
+
+	err3 := Pool.QueryRow(context.Background(),
+		"SELECT author_id FROM pull_requests WHERE pull_request_id = $1", pullRequestID).Scan(&author_id)
+	if err3 != nil {
+		fmt.Println("Something went wrong in function err3")
+	}
+
+	err1 := Pool.QueryRow(context.Background(),
+		"SELECT team_name FROM users WHERE user_id = $1", author_id).Scan(&authorTeam)
+
+	if err1 != nil {
+		fmt.Println("Something went wrong in function err1")
+	}
+
+	rows, err2 := Pool.Query(context.Background(),
+		"SELECT user_id FROM users WHERE team_name = $1 AND is_active = true AND user_id != $2;", authorTeam, author_id)
+
+	if err2 != nil {
+		fmt.Println("Something went wrong in function err2")
+	}
+
+	var userIDs []string
+
+	for rows.Next() {
+		var t string
+		temp_err := rows.Scan(&t)
+		if temp_err != nil {
+			fmt.Println("Something went wrong in loop")
+		}
+		userIDs = append(userIDs, t)
+	}
+
+	var a_reviewers []string
+
+	err4 := Pool.QueryRow(context.Background(),
+		"SELECT assigned_reviewers FROM pull_requests WHERE author_id = $1", author_id).Scan(&a_reviewers)
+	if err4 != nil {
+		fmt.Println("Something went wrong in function err4")
+	}
+
+	var req_id string
+
+	for _, v := range userIDs {
+		if !slices.Contains(a_reviewers, v) {
+			req_id = v
+			break
+		}
+	}
+
+	for i, v := range a_reviewers {
+		if v == oldReviewerID {
+			a_reviewers[i] = req_id
+			break
+		}
+	}
+
+	_, err5 := Pool.Exec(context.Background(),
+		"UPDATE pull_requests SET assigned_reviewers = $1 WHERE author_id = $2;", a_reviewers, author_id)
+	if err5 != nil {
+		fmt.Println("Something went wrong in function err5")
+	}
+
 }

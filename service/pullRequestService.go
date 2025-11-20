@@ -53,3 +53,26 @@ func MergeRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 }
+
+func ReassignRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method is not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var updates struct {
+		PullRequestID string `json:"pull_request_id"`
+		OldReviewerID string `json:"old_reviewer_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+		http.Error(w, "Wrong JSON", http.StatusBadRequest)
+		return
+	}
+
+	repository.ReassignRequestInDB(updates.PullRequestID, updates.OldReviewerID)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+}
