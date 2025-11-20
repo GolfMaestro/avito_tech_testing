@@ -2,6 +2,7 @@ package repository
 
 import (
 	"avito_tech_testing/dto"
+	"avito_tech_testing/models"
 	"context"
 	"fmt"
 )
@@ -29,4 +30,30 @@ func GetTeamMembersFromDB(teamID string) []dto.TeamMember {
 	}
 
 	return team_members
+}
+
+func AddNewTeamToDB(newTeam models.Team) {
+
+	_, err1 := Pool.Exec(context.Background(),
+		"INSERT INTO teams(team_name) VALUES ($1);",
+		newTeam.TeamName)
+
+	if err1 != nil {
+		fmt.Println("Something went wrong in funciton AddNewTeamToDB")
+	}
+
+	for _, v := range newTeam.Members {
+		var tempMember dto.TeamMember
+		tempMember = v
+
+		_, err := Pool.Exec(context.Background(),
+			"INSERT INTO users(user_id, username, team_name, is_active) VALUES ($1, $2, $3, $4);",
+			tempMember.UserID, tempMember.Username, newTeam.TeamName, tempMember.IsActive)
+
+		if err != nil {
+			fmt.Println("Something went wrong in funciton AddNewTeamToDB")
+		}
+
+	}
+
 }

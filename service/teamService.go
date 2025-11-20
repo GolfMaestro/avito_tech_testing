@@ -2,6 +2,7 @@ package service
 
 import (
 	"avito_tech_testing/dto"
+	"avito_tech_testing/models"
 	"avito_tech_testing/repository"
 	"encoding/json"
 	"net/http"
@@ -24,5 +25,27 @@ func GetTeamMembers(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	json.NewEncoder(w).Encode(team_members)
+
+}
+
+func CreateNewTeam(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method is not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var newTeam models.Team
+
+	err := json.NewDecoder(r.Body).Decode(&newTeam)
+	if err != nil {
+		http.Error(w, "Wrong JSON", http.StatusBadRequest)
+		return
+	}
+
+	repository.AddNewTeamToDB(newTeam)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
 }
