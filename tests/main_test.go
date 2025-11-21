@@ -14,7 +14,7 @@ func TestConnection(t *testing.T) {
 
 	ctx := context.Background()
 
-	config, err := pgxpool.ParseConfig("postgres://postgres:2004@db:5433/avito_tech_test")
+	config, err := pgxpool.ParseConfig("postgres://postgres:2004@db-test:5432/avito_tech_test")
 	if err != nil {
 		t.Fatal(err)
 	}
