@@ -13,7 +13,7 @@ var Pool *pgxpool.Pool
 func InitDBConnetion() error {
 	ctx := context.Background()
 
-	conn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+	conn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_HOST"),
