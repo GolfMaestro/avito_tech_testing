@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -11,7 +13,15 @@ var Pool *pgxpool.Pool
 func InitDBConnetion() error {
 	ctx := context.Background()
 
-	config, err := pgxpool.ParseConfig("postgres://postgres:2004@localhost:5432/avito_tech")
+	conn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
+
+	config, err := pgxpool.ParseConfig(conn)
 	if err != nil {
 		return err
 	}
