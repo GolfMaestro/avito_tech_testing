@@ -17,14 +17,14 @@ func GetTeamMembers(w http.ResponseWriter, r *http.Request) {
 
 	team_name := r.URL.Query().Get("team_name")
 
-	team_members, err := repository.GetTeamMembersFromDB(team_name)
+	team, err := repository.GetTeamMembersFromDB(team_name)
 
 	if err != nil {
 		utility.Err(w, http.StatusNotFound, "NOT_FOUND", "resource not found")
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(team_members)
+		json.NewEncoder(w).Encode(team)
 	}
 
 }

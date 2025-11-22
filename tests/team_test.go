@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"avito_tech_testing/dto"
+	"avito_tech_testing/models"
 	"avito_tech_testing/repository"
 	"avito_tech_testing/service"
 	"context"
@@ -19,7 +19,7 @@ func TestGetTeam(t *testing.T) {
 	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE teams CASCADE")
 	repository.Pool.Exec(context.Background(), "INSERT INTO teams(team_name) VALUES ('t1')")
 
-	req := httptest.NewRequest(http.MethodGet, "/team/get", nil)
+	req := httptest.NewRequest(http.MethodGet, "/team/get?team_name=t1", nil)
 	w := httptest.NewRecorder()
 
 	service.GetTeamMembers(w, req)
@@ -28,14 +28,14 @@ func TestGetTeam(t *testing.T) {
 		t.Fatalf("waiting 200, get:  %d", w.Code)
 	}
 
-	var teamMembers []dto.TeamMember
+	var team models.Team
 
-	if err := json.NewDecoder(w.Body).Decode(&teamMembers); err != nil {
+	if err := json.NewDecoder(w.Body).Decode(&team); err != nil {
 		t.Fatal("Problem with decode json:", err)
 	}
 
-	if len(teamMembers) != 0 {
-		t.Fatalf("waiting 0, get: %d", len(teamMembers))
+	if len(team.Members) != 0 {
+		t.Fatalf("waiting 0, get: %d", len(team.Members))
 	}
 
 }

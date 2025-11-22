@@ -8,31 +8,50 @@ import (
 	"fmt"
 )
 
-func GetTeamMembersFromDB(teamID string) ([]dto.TeamMember, error) {
+func GetTeamMembersFromDB(teamID string) (models.Team, error) {
 
-	rows, err := Pool.Query(context.Background(),
-		"SELECT user_id, username, is_active FROM users WHERE team_name = $1;", teamID)
+	var isExist bool
+	err1 := Pool.QueryRow(context.Background(),
+		"SELECT EXISTS (SELECT 1 FROM teams WHERE team_name = $1) AS exists;", teamID).Scan(&isExist)
 
-	if err != nil {
+	if err1 != nil {
 		fmt.Println("Something went wrong in function GetUsersFromDB")
-		return nil, errors.New("NOT_FOUND")
-	} else {
-		defer rows.Close()
-
-		var team_members []dto.TeamMember
-
-		for rows.Next() {
-			var t dto.TeamMember
-			temp_err := rows.Scan(&t.UserID, &t.Username, &t.IsActive)
-			if temp_err != nil {
-				fmt.Println("Something went wrong")
-			}
-			team_members = append(team_members, t)
-		}
-
-		return team_members, nil
 	}
 
+	if isExist {
+		rows, err := Pool.Query(context.Background(),
+			"SELECT user_id, username, is_active FROM users WHERE team_name = $1;", teamID)
+		if err != nil {
+			fmt.Println("Something went wrong in function GetUsersFromDB")
+		} else {
+			defer rows.Close()
+
+			var team_members []dto.TeamMember
+
+			for rows.Next() {
+				var t dto.TeamMember
+				temp_err := rows.Scan(&t.UserID, &t.Username, &t.IsActive)
+				if temp_err != nil {
+					fmt.Println("Something went wrong")
+				}
+				team_members = append(team_members, t)
+			}
+
+			tempTeam := models.Team{
+				TeamName: teamID,
+				Members:  team_members,
+			}
+
+			return tempTeam, nil
+		}
+	}
+
+	emptyTeam := models.Team{
+		TeamName: "0",
+		Members:  []dto.TeamMember{},
+	}
+
+	return emptyTeam, errors.New("NOT_FOUND")
 }
 
 func AddNewTeamToDB(newTeam models.Team) {
