@@ -35,3 +35,22 @@ func TestUpdateUserStatus(t *testing.T) {
 	}
 
 }
+
+func TestUpdateUserStatusUserNotFound(t *testing.T) {
+
+	TestConnection(t)
+
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE users CASCADE")
+
+	values := strings.NewReader("{\"user_id\": \"u1\", \"is_active\": true}")
+	req := httptest.NewRequest(http.MethodPost, "/users/setIsActive", values)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	service.UpdateUserStatus(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("waiting 404, get:  %d", w.Code)
+	}
+
+}
