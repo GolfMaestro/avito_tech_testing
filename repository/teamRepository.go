@@ -4,32 +4,35 @@ import (
 	"avito_tech_testing/dto"
 	"avito_tech_testing/models"
 	"context"
+	"errors"
 	"fmt"
 )
 
-func GetTeamMembersFromDB(teamID string) []dto.TeamMember {
+func GetTeamMembersFromDB(teamID string) ([]dto.TeamMember, error) {
 
 	rows, err := Pool.Query(context.Background(),
 		"SELECT user_id, username, is_active FROM users WHERE team_name = $1;", teamID)
 
 	if err != nil {
 		fmt.Println("Something went wrong in function GetUsersFromDB")
-	}
+		return nil, errors.New("NOT_FOUND")
+	} else {
+		defer rows.Close()
 
-	defer rows.Close()
+		var team_members []dto.TeamMember
 
-	var team_members []dto.TeamMember
-
-	for rows.Next() {
-		var t dto.TeamMember
-		temp_err := rows.Scan(&t.UserID, &t.Username, &t.IsActive)
-		if temp_err != nil {
-			fmt.Println("Something went wrong")
+		for rows.Next() {
+			var t dto.TeamMember
+			temp_err := rows.Scan(&t.UserID, &t.Username, &t.IsActive)
+			if temp_err != nil {
+				fmt.Println("Something went wrong")
+			}
+			team_members = append(team_members, t)
 		}
-		team_members = append(team_members, t)
+
+		return team_members, nil
 	}
 
-	return team_members
 }
 
 func AddNewTeamToDB(newTeam models.Team) {

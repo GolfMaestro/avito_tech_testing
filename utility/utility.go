@@ -1,6 +1,7 @@
-package service
+package utility
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -18,4 +19,10 @@ func getRequestedId(r *http.Request) int {
 	}
 
 	return requested_id
+}
+
+func Err(w http.ResponseWriter, status int, code string, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(ErrorResponse{Code: code, Message: msg})
 }
