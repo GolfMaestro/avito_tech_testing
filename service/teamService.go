@@ -44,9 +44,14 @@ func CreateNewTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repository.AddNewTeamToDB(newTeam)
+	team, err := repository.AddNewTeamToDB(newTeam)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	if err != nil {
+		utility.Err(w, http.StatusNotFound, "TEAM_EXISTS", "team_name already exists")
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(team)
+	}
 
 }
