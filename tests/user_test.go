@@ -54,3 +54,22 @@ func TestUpdateUserStatusUserNotFound(t *testing.T) {
 	}
 
 }
+
+func TestGetUserPullRequests(t *testing.T) {
+
+	TestConnection(t)
+
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE users CASCADE")
+	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u1', 'bot1', 't1', false);")
+	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u125', 'bot125', 't1', false);")
+	repository.Pool.Exec(context.Background(), "INSERT INTO pull_requests(pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ('pr1', 'update_1', 'u1', '{\"u125\"}');")
+
+	req := httptest.NewRequest(http.MethodGet, "/users/getReview?user_id=u125", nil)
+	w := httptest.NewRecorder()
+
+	service.GetUserReviews(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("waiting 200, get:  %d", w.Code)
+	}
+}

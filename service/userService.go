@@ -1,7 +1,6 @@
 package service
 
 import (
-	"avito_tech_testing/dto"
 	"avito_tech_testing/repository"
 	"avito_tech_testing/utility"
 	"encoding/json"
@@ -44,13 +43,14 @@ func GetUserReviews(w http.ResponseWriter, r *http.Request) {
 
 	user_id := r.URL.Query().Get("user_id")
 
-	var pullRequests []dto.PullRequestShort
+	userPullRequest, err := repository.GetUserReviewsFromDB(user_id)
 
-	pullRequests = repository.GetUserReviewsFromDB(user_id)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	json.NewEncoder(w).Encode(pullRequests)
+	if err != nil {
+		utility.Err(w, http.StatusNotFound, "NOT FOUND", "resource not found")
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(userPullRequest)
+	}
 
 }

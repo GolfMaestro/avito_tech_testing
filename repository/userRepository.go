@@ -52,28 +52,50 @@ func UpdateUserStatus(req_id string, new_status bool) (models.User, error) {
 
 }
 
-func GetUserReviewsFromDB(user_id string) []dto.PullRequestShort {
+func GetUserReviewsFromDB(user_id string) (dto.UserPullRequests, error) {
 
-	rows, err := Pool.Query(context.Background(),
-		"SELECT pull_request_id, pull_request_name, author_id, status FROM pull_requests WHERE $1 = ANY(assigned_reviewers);", user_id)
+	var isExist bool
+	err2 := Pool.QueryRow(context.Background(),
+		"SELECT EXISTS (SELECT 1 FROM users WHERE user_id = $1) AS exists;", user_id).Scan(&isExist)
 
-	if err != nil {
+	if err2 != nil {
 		fmt.Println("Something went wrong in function GetUsersFromDB")
 	}
 
-	defer rows.Close()
+	if isExist {
+		rows, err := Pool.Query(context.Background(),
+			"SELECT pull_request_id, pull_request_name, author_id, status FROM pull_requests WHERE $1 = ANY(assigned_reviewers);", user_id)
 
-	var team_members []dto.PullRequestShort
-
-	for rows.Next() {
-		var t dto.PullRequestShort
-		temp_err := rows.Scan(&t.PullRequestID, &t.PullRequestName, &t.AuthorID, &t.Status)
-		if temp_err != nil {
-			fmt.Println("Something went wrong")
+		if err != nil {
+			fmt.Println("Something went wrong in function GetUsersFromDB")
 		}
-		team_members = append(team_members, t)
+
+		defer rows.Close()
+
+		var pullRequests []dto.PullRequestShort
+
+		for rows.Next() {
+			var t dto.PullRequestShort
+			temp_err := rows.Scan(&t.PullRequestID, &t.PullRequestName, &t.AuthorID, &t.Status)
+			if temp_err != nil {
+				fmt.Println("Something went wrong")
+			}
+			pullRequests = append(pullRequests, t)
+		}
+
+		userPullRequests := dto.UserPullRequests{
+			UserID:       user_id,
+			PullRequests: pullRequests,
+		}
+
+		return userPullRequests, nil
 	}
 
-	return team_members
+	emptyUserPullRequests := dto.UserPullRequests{
+		UserID:       "",
+		PullRequests: []dto.PullRequestShort{},
+	}
+
+	return emptyUserPullRequests, errors.New("NOT_FOUND")
 
 }
