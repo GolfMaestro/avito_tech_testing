@@ -40,6 +40,22 @@ func TestGetTeam(t *testing.T) {
 
 }
 
+func TestGetTeamNotExist(t *testing.T) {
+
+	TestConnection(t)
+
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE teams CASCADE")
+
+	req := httptest.NewRequest(http.MethodGet, "/team/get?team_name=t1", nil)
+	w := httptest.NewRecorder()
+
+	service.GetTeamMembers(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("waiting 404, get:  %d", w.Code)
+	}
+}
+
 func TestAddTeam(t *testing.T) {
 
 	TestConnection(t)
