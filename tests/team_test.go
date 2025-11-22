@@ -53,9 +53,9 @@ func TestAddTeam(t *testing.T) {
 	w := httptest.NewRecorder()
 	service.CreateNewTeam(w, req)
 
-	// if w.Code != http.StatusCreated {
-	// 	t.Fatalf("waiting 201, get:  %d", w.Code)
-	// }
+	if w.Code != http.StatusCreated {
+		t.Fatalf("waiting 201, get:  %d", w.Code)
+	}
 
 	var count int
 	repository.Pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM teams").Scan(&count)
