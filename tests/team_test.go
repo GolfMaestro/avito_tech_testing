@@ -80,3 +80,23 @@ func TestAddTeam(t *testing.T) {
 	}
 
 }
+
+func TestAddTeamTeamExist(t *testing.T) {
+
+	TestConnection(t)
+
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE teams CASCADE")
+	repository.Pool.Exec(context.Background(), "INSERT INTO teams(team_name) VALUES ('t1')")
+
+	values := strings.NewReader("{\"team_name\": \"t1\", \"members\": []}")
+	req := httptest.NewRequest(http.MethodPost, "/persons", values)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	service.CreateNewTeam(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("waiting 400, get:  %d", w.Code)
+	}
+
+}
