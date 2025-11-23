@@ -128,7 +128,7 @@ func TestMergePullRequestAlreadyMerged(t *testing.T) {
 	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE pull_requests CASCADE;")
 	repository.Pool.Exec(context.Background(), "INSERT INTO teams(team_name) VALUES ('t1');")
 	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u124', 'bot2', 't1', false);")
-	repository.Pool.Exec(context.Background(), "INSERT INTO pull_requests(pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ('pr1', 'update_1', 'u124', '{}');")
+	repository.Pool.Exec(context.Background(), "INSERT INTO pull_requests(pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ('pr1', 'update_1', 'u124', ARRAY['u1']);")
 	repository.Pool.Exec(context.Background(), "UPDATE pull_requests SET status = 'MERGED', merged_at = NOW() WHERE pull_request_id = 'pr1';")
 
 	values := strings.NewReader("{\"pull_request_id\": \"pr1\"}")
