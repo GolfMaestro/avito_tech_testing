@@ -19,6 +19,7 @@ func TestCreatePullRequest(t *testing.T) {
 	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE users CASCADE;")
 	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE pull_requests CASCADE;")
 	repository.Pool.Exec(context.Background(), "INSERT INTO teams(team_name) VALUES ('t1');")
+	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u4', 'bot1', 't1', false);")
 	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u2', 'bot1', 't1', false);")
 
 	values := strings.NewReader("{\"pull_request_id\": \"pr1\", \"pull_request_name\": \"update_1\", \"author_id\": \"u2\"}")
