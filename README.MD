@@ -1,0 +1,10 @@
+## Запуск сервиса:
+1. docker-compose up (Сервер станет доступен по ссылке: http://localhost:8080)
+
+## Запуск тестов:
+1. docker compose --profile test run --rm app-test (Докер запустит контейнер с тестовой бд и запустит тесты)
+
+## Проблемы с которыми столкнулся во время выполнения задания
+1. Каждый эндпоинты /pullRequest/create, /pullRequest/merge, /pullRequest/reassign возвращают не полный, либо чуть измененный объект pullRequest. При чем такие dto не были указаны в openapi.yml. Тоже самое и с эндпоинтом /users/getReview. Решение: Создал dto: UserPullRequests, CreatePullRequestResponse, MergePullRequestResponse, ReassignPullRequestResponse для каждого такого эндпоинта.
+2. В эндпоинте /pullRequest/merge отсутствует пример ошибки, если пул реквест уже merged. Решение: использовал код "PR_MERGED" с сообщением "PR already merged".
+3. Эндпоинт /users/setIsActive возвращает не просто пользователя, а как вложенный объект ```{"user": {"user_id": "u2", ... ```. Решение: использовал анонимную структуру которую и передавал в ответе.
