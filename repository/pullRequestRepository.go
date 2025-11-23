@@ -16,14 +16,14 @@ func AddPullRequestInDB(newPullRequest models.PullRequest) (dto.CreatePullReques
 	err3 := Pool.QueryRow(context.Background(),
 		"SELECT EXISTS (SELECT 1 FROM users WHERE user_id = $1) AS exists;", newPullRequest.AuthorID).Scan(&isExistAuthor)
 	if err3 != nil {
-		fmt.Println("Something went wrong in function AddPullRequestInDB")
+		fmt.Println("Something went wrong when checking author existence in function AddPullRequestInDB")
 	}
 
 	var isExistPR bool
 	err2 := Pool.QueryRow(context.Background(),
 		"SELECT EXISTS (SELECT 1 FROM pull_requests WHERE pull_request_id = $1) AS exists;", newPullRequest.PullRequestID).Scan(&isExistPR)
 	if err2 != nil {
-		fmt.Println("Something went wrong in function AddPullRequestInDB")
+		fmt.Println("Something went wrong when checking pull request existence in function AddPullRequestInDB")
 	}
 
 	emptyPullRequest := dto.CreatePullRequestResponse{
@@ -46,7 +46,7 @@ func AddPullRequestInDB(newPullRequest models.PullRequest) (dto.CreatePullReques
 			newPullRequest.PullRequestID, newPullRequest.PullRequestName, newPullRequest.AuthorID, reviewers)
 
 		if err != nil {
-			fmt.Println("Something went wrong in funciton AddPullRequestInDB")
+			fmt.Println("Something went wrong when inserting new pull_request in DB in funciton AddPullRequestInDB")
 		}
 
 		pullRequest := dto.CreatePullRequestResponse{
@@ -71,7 +71,7 @@ func getNewReviewers(author_id string) []string {
 		"SELECT team_name FROM users WHERE user_id = $1", author_id).Scan(&authorTeam)
 
 	if err1 != nil {
-		fmt.Println("Something went wrong in function getNewReviewers")
+		fmt.Println("Something went wrong when selecting authors team in function getNewReviewers")
 	}
 
 	userIDs := getActiveTeamMembersIds(authorTeam, author_id)
@@ -96,7 +96,7 @@ func MergeRequestInDB(merger_request_id string) (dto.MergePullRequestResponse, e
 	err2 := Pool.QueryRow(context.Background(),
 		"SELECT EXISTS (SELECT 1 FROM pull_requests WHERE pull_request_id = $1) AS exists;", merger_request_id).Scan(&isExistPR)
 	if err2 != nil {
-		fmt.Println("Something went wrong in function MergeRequestInDB")
+		fmt.Println("Something went wrong when checking pull request existence in function MergeRequestInDB")
 	}
 
 	if !isExistPR {
@@ -117,7 +117,7 @@ func MergeRequestInDB(merger_request_id string) (dto.MergePullRequestResponse, e
 			"SELECT status FROM pull_requests WHERE pull_request_id = $1", merger_request_id).Scan(&tempStatus)
 
 		if err1 != nil {
-			fmt.Println("Something went wrong in function MergeRequestInDB1")
+			fmt.Println("Something went wrong when checking pull request status in function MergeRequestInDB")
 		}
 
 		if tempStatus == "OPEN" {
@@ -125,7 +125,7 @@ func MergeRequestInDB(merger_request_id string) (dto.MergePullRequestResponse, e
 				"UPDATE pull_requests SET status = 'MERGED', merged_at = NOW() WHERE pull_request_id = $1;", merger_request_id)
 
 			if err != nil {
-				fmt.Println("Something went wrong in function MergeRequestInDB")
+				fmt.Println("Something went wrong when updating pull request in function MergeRequestInDB")
 			}
 
 			var mergePullRequest dto.MergePullRequestResponse
@@ -139,7 +139,7 @@ func MergeRequestInDB(merger_request_id string) (dto.MergePullRequestResponse, e
 				&mergePullRequest.AssignedReviewers,
 				&mergePullRequest.MergedAt)
 			if err3 != nil {
-				fmt.Println("Something went wrong in function MergeRequestInDB")
+				fmt.Println("Something went wrong when selecting pull request from DB in function MergeRequestInDB")
 			}
 
 			return mergePullRequest, nil
@@ -166,14 +166,14 @@ func ReassignRequestInDB(pullRequestID string, oldReviewerID string) (dto.Reassi
 	err21 := Pool.QueryRow(context.Background(),
 		"SELECT EXISTS (SELECT 1 FROM pull_requests WHERE pull_request_id = $1) AS exists;", pullRequestID).Scan(&isExistPR)
 	if err21 != nil {
-		fmt.Println("Something went wrong in function ReassignRequestInDB")
+		fmt.Println("Something went wrong when checking pull request existence in function ReassignRequestInDB")
 	}
 
 	var isExistUser bool
 	err22 := Pool.QueryRow(context.Background(),
 		"SELECT EXISTS (SELECT 1 FROM users WHERE user_id = $1) AS exists;", oldReviewerID).Scan(&isExistUser)
 	if err22 != nil {
-		fmt.Println("Something went wrong in function ReassignRequestInDB")
+		fmt.Println("Something went wrong when checking user existence in function ReassignRequestInDB")
 	}
 
 	emptyReassignPR := dto.ReassignPullRequestResponse{
@@ -194,7 +194,7 @@ func ReassignRequestInDB(pullRequestID string, oldReviewerID string) (dto.Reassi
 		err23 := Pool.QueryRow(context.Background(),
 			"SELECT status FROM pull_requests WHERE pull_request_id = $1;", pullRequestID).Scan(&isMerged)
 		if err23 != nil {
-			fmt.Println("Something went wrong in function ReassignRequestInDB")
+			fmt.Println("Something went wrong when selecting status of pull request in function ReassignRequestInDB")
 		}
 
 		if isMerged == "MERGED" {
@@ -206,14 +206,14 @@ func ReassignRequestInDB(pullRequestID string, oldReviewerID string) (dto.Reassi
 			err3 := Pool.QueryRow(context.Background(),
 				"SELECT author_id FROM pull_requests WHERE pull_request_id = $1", pullRequestID).Scan(&author_id)
 			if err3 != nil {
-				fmt.Println("Something went wrong in function err3")
+				fmt.Println("Something went wrong when selecting author id from pull request in function ReassignRequestInDB")
 			}
 
 			err1 := Pool.QueryRow(context.Background(),
 				"SELECT team_name FROM users WHERE user_id = $1", author_id).Scan(&authorTeam)
 
 			if err1 != nil {
-				fmt.Println("Something went wrong in function err1")
+				fmt.Println("Something went wrong when selecting team name from user in function ReassignRequestInDB")
 			}
 
 			userIDs := getActiveTeamMembersIds(authorTeam, author_id)
@@ -223,7 +223,7 @@ func ReassignRequestInDB(pullRequestID string, oldReviewerID string) (dto.Reassi
 			err4 := Pool.QueryRow(context.Background(),
 				"SELECT assigned_reviewers FROM pull_requests WHERE author_id = $1", author_id).Scan(&a_reviewers)
 			if err4 != nil {
-				fmt.Println("Something went wrong in function err4")
+				fmt.Println("Something went wrong when selecting assigned reviewers from pull request in function ReassignRequestInDB")
 			}
 
 			var req_id string
@@ -245,7 +245,7 @@ func ReassignRequestInDB(pullRequestID string, oldReviewerID string) (dto.Reassi
 			_, err5 := Pool.Exec(context.Background(),
 				"UPDATE pull_requests SET assigned_reviewers = $1 WHERE author_id = $2;", a_reviewers, author_id)
 			if err5 != nil {
-				fmt.Println("Something went wrong in function err5")
+				fmt.Println("Something went wrong when upsating assigned reviewers in pull request in function ReassignRequestInDB")
 			}
 
 			var tempReassigPR dto.ReassignPullRequestResponse
@@ -257,7 +257,7 @@ func ReassignRequestInDB(pullRequestID string, oldReviewerID string) (dto.Reassi
 				&tempReassigPR.PR.Status,
 				&tempReassigPR.PR.AssignedReviewers)
 			if err6 != nil {
-				fmt.Println("Something went wrong in function err6")
+				fmt.Println("Something went wrong when selecting pull request information in function ReassignRequestInDB")
 			}
 
 			tempReassigPR.ReplacedBy = req_id
@@ -275,7 +275,7 @@ func getActiveTeamMembersIds(author_team string, author_id string) []string {
 		"SELECT user_id FROM users WHERE team_name = $1 AND is_active = true AND user_id != $2;", author_team, author_id)
 
 	if err != nil {
-		fmt.Println("Something went wrong in function getActiveTeamMembersIds")
+		fmt.Println("Something went wrong whene selecting user id from user in function getActiveTeamMembersIds")
 	}
 
 	var userIDs []string

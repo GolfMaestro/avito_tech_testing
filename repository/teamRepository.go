@@ -15,14 +15,14 @@ func GetTeamMembersFromDB(teamID string) (models.Team, error) {
 		"SELECT EXISTS (SELECT 1 FROM teams WHERE team_name = $1) AS exists;", teamID).Scan(&isExist)
 
 	if err1 != nil {
-		fmt.Println("Something went wrong in function GetUsersFromDB")
+		fmt.Println("Something went wrong when checking team existence in function GetTeamMembersFromDB")
 	}
 
 	if isExist {
 		rows, err := Pool.Query(context.Background(),
 			"SELECT user_id, username, is_active FROM users WHERE team_name = $1;", teamID)
 		if err != nil {
-			fmt.Println("Something went wrong in function GetUsersFromDB")
+			fmt.Println("Something went wrong when selecting user info in function GetTeamMembersFromDB")
 		} else {
 			defer rows.Close()
 
@@ -32,7 +32,7 @@ func GetTeamMembersFromDB(teamID string) (models.Team, error) {
 				var t dto.TeamMember
 				temp_err := rows.Scan(&t.UserID, &t.Username, &t.IsActive)
 				if temp_err != nil {
-					fmt.Println("Something went wrong")
+					fmt.Println("Something went wrong in parsing team members")
 				}
 				team_members = append(team_members, t)
 			}
@@ -61,7 +61,7 @@ func AddNewTeamToDB(newTeam models.Team) (models.Team, error) {
 		"SELECT EXISTS (SELECT 1 FROM teams WHERE team_name = $1) AS exists;", newTeam.TeamName).Scan(&isExist)
 
 	if err2 != nil {
-		fmt.Println("Something went wrong in function GetUsersFromDB")
+		fmt.Println("Something went wrong when checking team existence in function AddNewTeamToDB")
 	}
 
 	if !isExist {
@@ -70,7 +70,7 @@ func AddNewTeamToDB(newTeam models.Team) (models.Team, error) {
 			newTeam.TeamName)
 
 		if err1 != nil {
-			fmt.Println("Something went wrong in funciton AddNewTeamToDB")
+			fmt.Println("Something went wrong when inserting team in DB in funciton AddNewTeamToDB")
 		}
 
 		for _, v := range newTeam.Members {
@@ -82,7 +82,7 @@ func AddNewTeamToDB(newTeam models.Team) (models.Team, error) {
 				tempMember.UserID, tempMember.Username, newTeam.TeamName, tempMember.IsActive)
 
 			if err != nil {
-				fmt.Println("Something went wrong in funciton AddNewTeamToDB")
+				fmt.Println("Something went wrong when inserting user in DB in funciton AddNewTeamToDB")
 			}
 
 		}

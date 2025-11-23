@@ -15,7 +15,7 @@ func UpdateUserStatus(req_id string, new_status bool) (models.User, error) {
 		"SELECT EXISTS (SELECT 1 FROM users WHERE user_id = $1) AS exists;", req_id).Scan(&isExist)
 
 	if err2 != nil {
-		fmt.Println("Something went wrong in function GetUsersFromDB")
+		fmt.Println("Something went wrong when checking user existence in function UpdateUserStatus")
 	}
 
 	if isExist {
@@ -28,7 +28,7 @@ func UpdateUserStatus(req_id string, new_status bool) (models.User, error) {
 			"UPDATE users SET is_active = $1 WHERE user_id = $2 RETURNING user_id, username, team_name, is_active;", new_status, req_id,
 		).Scan(&user_id, &username, &team_name, &is_active)
 		if err != nil {
-			fmt.Println("Something went wrong in funciton UpdatePersonNameById")
+			fmt.Println("Something went wrong when updating user in funciton UpdateUserStatus")
 		}
 
 		user := models.User{
@@ -59,7 +59,7 @@ func GetUserReviewsFromDB(user_id string) (dto.UserPullRequests, error) {
 		"SELECT EXISTS (SELECT 1 FROM users WHERE user_id = $1) AS exists;", user_id).Scan(&isExist)
 
 	if err2 != nil {
-		fmt.Println("Something went wrong in function GetUsersFromDB")
+		fmt.Println("Something went wrong when checking user existence in function GetUserReviewsFromDB")
 	}
 
 	if isExist {
@@ -67,7 +67,7 @@ func GetUserReviewsFromDB(user_id string) (dto.UserPullRequests, error) {
 			"SELECT pull_request_id, pull_request_name, author_id, status FROM pull_requests WHERE $1 = ANY(assigned_reviewers);", user_id)
 
 		if err != nil {
-			fmt.Println("Something went wrong in function GetUsersFromDB")
+			fmt.Println("Something went wrong when selecting pull request information in function GetUserReviewsFromDB")
 		}
 
 		defer rows.Close()
