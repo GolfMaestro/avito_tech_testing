@@ -160,55 +160,111 @@ func MergeRequestInDB(merger_request_id string) (dto.MergePullRequestResponse, e
 
 }
 
-func ReassignRequestInDB(pullRequestID string, oldReviewerID string) {
+func ReassignRequestInDB(pullRequestID string, oldReviewerID string) (dto.ReassignPullRequestResponse, error) {
 
-	var authorTeam string
-
-	var author_id string
-
-	err3 := Pool.QueryRow(context.Background(),
-		"SELECT author_id FROM pull_requests WHERE pull_request_id = $1", pullRequestID).Scan(&author_id)
-	if err3 != nil {
-		fmt.Println("Something went wrong in function err3")
+	var isExistPR bool
+	err21 := Pool.QueryRow(context.Background(),
+		"SELECT EXISTS (SELECT 1 FROM pull_requests WHERE pull_request_id = $1) AS exists;", pullRequestID).Scan(&isExistPR)
+	if err21 != nil {
+		fmt.Println("Something went wrong in function ReassignRequestInDB")
 	}
 
-	err1 := Pool.QueryRow(context.Background(),
-		"SELECT team_name FROM users WHERE user_id = $1", author_id).Scan(&authorTeam)
-
-	if err1 != nil {
-		fmt.Println("Something went wrong in function err1")
+	var isExistUser bool
+	err22 := Pool.QueryRow(context.Background(),
+		"SELECT EXISTS (SELECT 1 FROM users WHERE user_id = $1) AS exists;", oldReviewerID).Scan(&isExistUser)
+	if err22 != nil {
+		fmt.Println("Something went wrong in function ReassignRequestInDB")
 	}
 
-	userIDs := getActiveTeamMembersIds(authorTeam, author_id)
-
-	var a_reviewers []string
-
-	err4 := Pool.QueryRow(context.Background(),
-		"SELECT assigned_reviewers FROM pull_requests WHERE author_id = $1", author_id).Scan(&a_reviewers)
-	if err4 != nil {
-		fmt.Println("Something went wrong in function err4")
+	emptyReassignPR := dto.ReassignPullRequestResponse{
+		PR: dto.CreatePullRequestResponse{
+			PullRequestID:     "",
+			PullRequestName:   "",
+			AuthorID:          "",
+			Status:            "OPEN",
+			AssignedReviewers: []string{},
+		},
 	}
 
-	var req_id string
+	if !isExistPR || !isExistUser {
+		return emptyReassignPR, errors.New("NOT_FOUND")
+	} else {
 
-	for _, v := range userIDs {
-		if !slices.Contains(a_reviewers, v) {
-			req_id = v
-			break
+		var isMerged string
+		err23 := Pool.QueryRow(context.Background(),
+			"SELECT status FROM pull_requests WHERE pull_request_id = $1;", pullRequestID).Scan(&isMerged)
+		if err23 != nil {
+			fmt.Println("Something went wrong in function ReassignRequestInDB")
 		}
-	}
 
-	for i, v := range a_reviewers {
-		if v == oldReviewerID {
-			a_reviewers[i] = req_id
-			break
+		if isMerged == "MERGED" {
+			return emptyReassignPR, errors.New("PR_MERGED")
+		} else {
+
+			var authorTeam string
+			var author_id string
+			err3 := Pool.QueryRow(context.Background(),
+				"SELECT author_id FROM pull_requests WHERE pull_request_id = $1", pullRequestID).Scan(&author_id)
+			if err3 != nil {
+				fmt.Println("Something went wrong in function err3")
+			}
+
+			err1 := Pool.QueryRow(context.Background(),
+				"SELECT team_name FROM users WHERE user_id = $1", author_id).Scan(&authorTeam)
+
+			if err1 != nil {
+				fmt.Println("Something went wrong in function err1")
+			}
+
+			userIDs := getActiveTeamMembersIds(authorTeam, author_id)
+
+			var a_reviewers []string
+
+			err4 := Pool.QueryRow(context.Background(),
+				"SELECT assigned_reviewers FROM pull_requests WHERE author_id = $1", author_id).Scan(&a_reviewers)
+			if err4 != nil {
+				fmt.Println("Something went wrong in function err4")
+			}
+
+			var req_id string
+
+			for _, v := range userIDs {
+				if !slices.Contains(a_reviewers, v) {
+					req_id = v
+					break
+				}
+			}
+
+			for i, v := range a_reviewers {
+				if v == oldReviewerID {
+					a_reviewers[i] = req_id
+					break
+				}
+			}
+
+			_, err5 := Pool.Exec(context.Background(),
+				"UPDATE pull_requests SET assigned_reviewers = $1 WHERE author_id = $2;", a_reviewers, author_id)
+			if err5 != nil {
+				fmt.Println("Something went wrong in function err5")
+			}
+
+			var tempReassigPR dto.ReassignPullRequestResponse
+			err6 := Pool.QueryRow(context.Background(),
+				"SELECT pull_request_id, pull_request_name, author_id, status, assigned_reviewers FROM pull_requests WHERE pull_request_id = $1 ", pullRequestID,
+			).Scan(&tempReassigPR.PR.PullRequestID,
+				&tempReassigPR.PR.PullRequestName,
+				&tempReassigPR.PR.AuthorID,
+				&tempReassigPR.PR.Status,
+				&tempReassigPR.PR.AssignedReviewers)
+			if err6 != nil {
+				fmt.Println("Something went wrong in function err6")
+			}
+
+			tempReassigPR.ReplacedBy = req_id
+
+			return tempReassigPR, nil
 		}
-	}
 
-	_, err5 := Pool.Exec(context.Background(),
-		"UPDATE pull_requests SET assigned_reviewers = $1 WHERE author_id = $2;", a_reviewers, author_id)
-	if err5 != nil {
-		fmt.Println("Something went wrong in function err5")
 	}
 
 }

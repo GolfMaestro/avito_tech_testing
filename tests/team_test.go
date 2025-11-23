@@ -63,7 +63,7 @@ func TestAddTeam(t *testing.T) {
 	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE teams CASCADE")
 
 	values := strings.NewReader("{\"team_name\": \"t1\", \"members\": []}")
-	req := httptest.NewRequest(http.MethodPost, "/persons", values)
+	req := httptest.NewRequest(http.MethodPost, "/team/add", values)
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -89,7 +89,7 @@ func TestAddTeamTeamExist(t *testing.T) {
 	repository.Pool.Exec(context.Background(), "INSERT INTO teams(team_name) VALUES ('t1')")
 
 	values := strings.NewReader("{\"team_name\": \"t1\", \"members\": []}")
-	req := httptest.NewRequest(http.MethodPost, "/persons", values)
+	req := httptest.NewRequest(http.MethodPost, "/team/add", values)
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()

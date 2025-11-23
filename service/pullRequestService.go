@@ -73,10 +73,6 @@ func MergeRequest(w http.ResponseWriter, r *http.Request) {
 	} else if err.Error() == "PR_ALREADY_MERGED" {
 		utility.Err(w, http.StatusConflict, "PR_ALREADY_MERGED", "PR already merged")
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-
 }
 
 func ReassignRequest(w http.ResponseWriter, r *http.Request) {
@@ -95,9 +91,16 @@ func ReassignRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repository.ReassignRequestInDB(updates.PullRequestID, updates.OldReviewerID)
+	reassignPullRequest, err := repository.ReassignRequestInDB(updates.PullRequestID, updates.OldReviewerID)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	if err == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(reassignPullRequest)
+	} else if err.Error() == "NOT_FOUND" {
+		utility.Err(w, http.StatusNotFound, "NOT_FOUND", "resource not found")
+	} else if err.Error() == "PR_ALREADY_MERGED" {
+		utility.Err(w, http.StatusConflict, "PR_MERGED", "cannot reassign on merged PR")
+	}
 
 }
