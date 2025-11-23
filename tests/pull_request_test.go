@@ -201,3 +201,81 @@ func TestReassignPullRequest(t *testing.T) {
 	}
 
 }
+
+func TestReassignPullRequestUserNotExist(t *testing.T) {
+
+	TestConnection(t)
+
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE teams CASCADE;")
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE users CASCADE;")
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE pull_requests CASCADE;")
+	repository.Pool.Exec(context.Background(), "INSERT INTO teams(team_name) VALUES ('t1');")
+	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u1', 'bot1', 't1', true);")
+	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u2', 'bot2', 't1', true);")
+
+	repository.Pool.Exec(context.Background(),
+		"INSERT INTO pull_requests(pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ('pr1', 'update_1', 'u2', ARRAY['u1']);")
+
+	values := strings.NewReader("{\"pull_request_id\": \"pr1\", \"old_reviewer_id\": \"u5\"}")
+	req := httptest.NewRequest(http.MethodPost, "/pullRequests/reassign", values)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	service.ReassignRequest(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("waiting 404, get:  %d", w.Code)
+	}
+
+}
+
+func TestReassignPullRequestPRNotExist(t *testing.T) {
+
+	TestConnection(t)
+
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE teams CASCADE;")
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE users CASCADE;")
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE pull_requests CASCADE;")
+	repository.Pool.Exec(context.Background(), "INSERT INTO teams(team_name) VALUES ('t1');")
+	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u1', 'bot1', 't1', true);")
+
+	values := strings.NewReader("{\"pull_request_id\": \"pr1\", \"old_reviewer_id\": \"u1\"}")
+	req := httptest.NewRequest(http.MethodPost, "/pullRequests/reassign", values)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	service.ReassignRequest(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("waiting 404, get:  %d", w.Code)
+	}
+
+}
+
+func TestReassignPullRequestPRAlreadyMerged(t *testing.T) {
+
+	TestConnection(t)
+
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE teams CASCADE;")
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE users CASCADE;")
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE pull_requests CASCADE;")
+	repository.Pool.Exec(context.Background(), "INSERT INTO teams(team_name) VALUES ('t1');")
+	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u1', 'bot1', 't1', true);")
+	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u2', 'bot2', 't1', true);")
+
+	repository.Pool.Exec(context.Background(),
+		"INSERT INTO pull_requests(pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ('pr1', 'update_1', 'u2', ARRAY['u1']);")
+	repository.Pool.Exec(context.Background(), "UPDATE pull_requests SET status = 'MERGED', merged_at = NOW() WHERE pull_request_id = 'pr1';")
+
+	values := strings.NewReader("{\"pull_request_id\": \"pr1\", \"old_reviewer_id\": \"u1\"}")
+	req := httptest.NewRequest(http.MethodPost, "/pullRequests/reassign", values)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	service.ReassignRequest(w, req)
+
+	if w.Code != http.StatusConflict {
+		t.Fatalf("waiting 409, get:  %d", w.Code)
+	}
+
+}

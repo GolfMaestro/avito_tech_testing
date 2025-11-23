@@ -153,7 +153,7 @@ func MergeRequestInDB(merger_request_id string) (dto.MergePullRequestResponse, e
 				MergedAt:          time.Now(),
 			}
 
-			return emptyMergePullRequest, errors.New("PR_ALREADY_MERGED")
+			return emptyMergePullRequest, errors.New("PR_MERGED")
 		}
 
 	}

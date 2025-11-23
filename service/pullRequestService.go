@@ -70,7 +70,7 @@ func MergeRequest(w http.ResponseWriter, r *http.Request) {
 
 	} else if err.Error() == "NOT_FOUND" {
 		utility.Err(w, http.StatusNotFound, "NOT_FOUND", "resource not found")
-	} else if err.Error() == "PR_ALREADY_MERGED" {
+	} else if err.Error() == "PR_MERGED" {
 		utility.Err(w, http.StatusConflict, "PR_ALREADY_MERGED", "PR already merged")
 	}
 }
@@ -99,7 +99,7 @@ func ReassignRequest(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(reassignPullRequest)
 	} else if err.Error() == "NOT_FOUND" {
 		utility.Err(w, http.StatusNotFound, "NOT_FOUND", "resource not found")
-	} else if err.Error() == "PR_ALREADY_MERGED" {
+	} else if err.Error() == "PR_MERGED" {
 		utility.Err(w, http.StatusConflict, "PR_MERGED", "cannot reassign on merged PR")
 	}
 
