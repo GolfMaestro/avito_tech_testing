@@ -57,7 +57,22 @@ func MergeRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repository.MergeRequestInDB(updates.PullRequestID)
+	mergePullRequst, err := repository.MergeRequestInDB(updates.PullRequestID)
+
+	if err == nil {
+		response := struct {
+			PullRequest dto.MergePullRequestResponse `json:"pr"`
+		}{PullRequest: mergePullRequst}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(response)
+
+	} else if err.Error() == "NOT_FOUND" {
+		utility.Err(w, http.StatusNotFound, "NOT_FOUND", "resource not found")
+	} else if err.Error() == "PR_ALREADY_MERGED" {
+		utility.Err(w, http.StatusConflict, "PR_ALREADY_MERGED", "PR already merged")
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

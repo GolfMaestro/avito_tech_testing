@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 )
 
 func AddPullRequestInDB(newPullRequest models.PullRequest) (dto.CreatePullRequestResponse, error) {
@@ -89,25 +90,74 @@ func getNewReviewers(author_id string) []string {
 	return reviewers
 }
 
-func MergeRequestInDB(merger_request_id string) {
+func MergeRequestInDB(merger_request_id string) (dto.MergePullRequestResponse, error) {
 
-	var tempStatus string
-
-	err1 := Pool.QueryRow(context.Background(),
-		"SELECT status FROM pull_requests WHERE pull_request_id = $1", merger_request_id).Scan(&tempStatus)
-
-	if err1 != nil {
+	var isExistPR bool
+	err2 := Pool.QueryRow(context.Background(),
+		"SELECT EXISTS (SELECT 1 FROM pull_requests WHERE pull_request_id = $1) AS exists;", merger_request_id).Scan(&isExistPR)
+	if err2 != nil {
 		fmt.Println("Something went wrong in function MergeRequestInDB")
 	}
 
-	if tempStatus == "OPEN" {
-		_, err := Pool.Exec(context.Background(),
-			"UPDATE pull_requests SET status = 'MERGED', merged_at = NOW() WHERE pull_request_id = $1;", merger_request_id)
-
-		if err != nil {
-			fmt.Println("Something went wrong in function MergeRequestInDB")
+	if !isExistPR {
+		emptyMergePullRequest := dto.MergePullRequestResponse{
+			PullRequestID:     "",
+			PullRequestName:   "",
+			AuthorID:          "",
+			Status:            "OPEN",
+			AssignedReviewers: []string{},
+			MergedAt:          time.Now(),
 		}
+
+		return emptyMergePullRequest, errors.New("NOT_FOUND")
+	} else {
+		var tempStatus string
+
+		err1 := Pool.QueryRow(context.Background(),
+			"SELECT status FROM pull_requests WHERE pull_request_id = $1", merger_request_id).Scan(&tempStatus)
+
+		if err1 != nil {
+			fmt.Println("Something went wrong in function MergeRequestInDB1")
+		}
+
+		if tempStatus == "OPEN" {
+			_, err := Pool.Exec(context.Background(),
+				"UPDATE pull_requests SET status = 'MERGED', merged_at = NOW() WHERE pull_request_id = $1;", merger_request_id)
+
+			if err != nil {
+				fmt.Println("Something went wrong in function MergeRequestInDB")
+			}
+
+			var mergePullRequest dto.MergePullRequestResponse
+
+			err3 := Pool.QueryRow(context.Background(),
+				"SELECT pull_request_id, pull_request_name, author_id, status, assigned_reviewers, merged_at FROM pull_requests WHERE pull_request_id = $1", merger_request_id,
+			).Scan(&mergePullRequest.PullRequestID,
+				&mergePullRequest.PullRequestName,
+				&mergePullRequest.AuthorID,
+				&mergePullRequest.Status,
+				&mergePullRequest.AssignedReviewers,
+				&mergePullRequest.MergedAt)
+			if err3 != nil {
+				fmt.Println("Something went wrong in function MergeRequestInDB")
+			}
+
+			return mergePullRequest, nil
+		} else {
+			emptyMergePullRequest := dto.MergePullRequestResponse{
+				PullRequestID:     "",
+				PullRequestName:   "",
+				AuthorID:          "",
+				Status:            "OPEN",
+				AssignedReviewers: []string{},
+				MergedAt:          time.Now(),
+			}
+
+			return emptyMergePullRequest, errors.New("PR_ALREADY_MERGED")
+		}
+
 	}
+
 }
 
 func ReassignRequestInDB(pullRequestID string, oldReviewerID string) {

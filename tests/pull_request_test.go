@@ -85,3 +85,35 @@ func TestCreatePullRequestPRAlreadyExist(t *testing.T) {
 	}
 
 }
+
+func TestMergePullRequest(t *testing.T) {
+
+	TestConnection(t)
+
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE teams CASCADE;")
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE users CASCADE;")
+	repository.Pool.Exec(context.Background(), "TRUNCATE TABLE pull_requests CASCADE;")
+	repository.Pool.Exec(context.Background(), "INSERT INTO teams(team_name) VALUES ('t1');")
+	repository.Pool.Exec(context.Background(), "INSERT INTO users(user_id, username, team_name, is_active) VALUES ('u124', 'bot2', 't1', false);")
+	repository.Pool.Exec(context.Background(), "INSERT INTO pull_requests(pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ('pr1', 'update_1', 'u124', '{}');")
+
+	values := strings.NewReader("{\"pull_request_id\": \"pr1\"}")
+	req := httptest.NewRequest(http.MethodPost, "/pullRequests/create", values)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	service.MergeRequest(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("waiting 201, get:  %d", w.Code)
+	}
+
+	var status string
+
+	repository.Pool.QueryRow(context.Background(), "SELECT status FROM pull_requests WHERE pull_request_id = 'pr1'").Scan(&status)
+
+	if status != "MERGED" {
+		t.Fatalf("waiting MERGED, get %s", status)
+	}
+
+}
