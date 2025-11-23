@@ -1,6 +1,7 @@
 package service
 
 import (
+	"avito_tech_testing/models"
 	"avito_tech_testing/repository"
 	"avito_tech_testing/utility"
 	"encoding/json"
@@ -28,9 +29,14 @@ func UpdateUserStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utility.Err(w, http.StatusNotFound, "NOT_FOUND", "resource not found")
 	} else {
+
+		response := struct {
+			User models.User `json:"user"`
+		}{User: user}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(user)
+		json.NewEncoder(w).Encode(response)
 	}
 
 }
