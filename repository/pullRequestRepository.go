@@ -1,22 +1,63 @@
 package repository
 
 import (
+	"avito_tech_testing/dto"
 	"avito_tech_testing/models"
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 )
 
-func AddPullRequestInDB(newPullRequest models.PullRequest) {
+func AddPullRequestInDB(newPullRequest models.PullRequest) (dto.CreatePullRequestResponse, error) {
 
-	reviewers := getNewReviewers(newPullRequest.AuthorID)
+	var isExistAuthor bool
+	err3 := Pool.QueryRow(context.Background(),
+		"SELECT EXISTS (SELECT 1 FROM users WHERE user_id = $1) AS exists;", newPullRequest.AuthorID).Scan(&isExistAuthor)
+	if err3 != nil {
+		fmt.Println("Something went wrong in function AddPullRequestInDB")
+	}
 
-	_, err := Pool.Exec(context.Background(),
-		"INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ($1, $2, $3, $4);",
-		newPullRequest.PullRequestID, newPullRequest.PullRequestName, newPullRequest.AuthorID, reviewers)
+	var isExistPR bool
+	err2 := Pool.QueryRow(context.Background(),
+		"SELECT EXISTS (SELECT 1 FROM pull_requests WHERE pull_request_id = $1) AS exists;", newPullRequest.PullRequestID).Scan(&isExistPR)
+	if err2 != nil {
+		fmt.Println("Something went wrong in function AddPullRequestInDB")
+	}
 
-	if err != nil {
-		fmt.Println("Something went wrong in funciton InsertNewPersonInDB")
+	emptyPullRequest := dto.CreatePullRequestResponse{
+		PullRequestID:     "",
+		PullRequestName:   "",
+		AuthorID:          "",
+		Status:            "OPEN",
+		AssignedReviewers: []string{},
+	}
+
+	if !isExistAuthor {
+		return emptyPullRequest, errors.New("NOT_FOUND")
+	} else if isExistPR {
+		return emptyPullRequest, errors.New("PR_EXISTS")
+	} else {
+		reviewers := getNewReviewers(newPullRequest.AuthorID)
+
+		_, err := Pool.Exec(context.Background(),
+			"INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, assigned_reviewers) VALUES ($1, $2, $3, $4);",
+			newPullRequest.PullRequestID, newPullRequest.PullRequestName, newPullRequest.AuthorID, reviewers)
+
+		if err != nil {
+			fmt.Println("Something went wrong in funciton AddPullRequestInDB")
+		}
+
+		pullRequest := dto.CreatePullRequestResponse{
+			PullRequestID:     newPullRequest.PullRequestID,
+			PullRequestName:   newPullRequest.PullRequestName,
+			AuthorID:          newPullRequest.AuthorID,
+			Status:            "OPEN",
+			AssignedReviewers: reviewers,
+		}
+
+		return pullRequest, nil
+
 	}
 
 }
@@ -29,7 +70,7 @@ func getNewReviewers(author_id string) []string {
 		"SELECT team_name FROM users WHERE user_id = $1", author_id).Scan(&authorTeam)
 
 	if err1 != nil {
-		fmt.Println("Something went wrong in function GetUsersFromDB")
+		fmt.Println("Something went wrong in function getNewReviewers")
 	}
 
 	userIDs := getActiveTeamMembersIds(authorTeam, author_id)

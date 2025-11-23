@@ -1,10 +1,11 @@
 package service
 
 import (
+	"avito_tech_testing/dto"
 	"avito_tech_testing/models"
 	"avito_tech_testing/repository"
+	"avito_tech_testing/utility"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -22,14 +23,23 @@ func CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(newPullRequest.PullRequestID)
-	fmt.Println(newPullRequest.PullRequestName)
-	fmt.Println(newPullRequest.AuthorID)
+	pullRequest, err := repository.AddPullRequestInDB(newPullRequest)
 
-	repository.AddPullRequestInDB(newPullRequest)
+	if err == nil {
+		response := struct {
+			PullRequest dto.CreatePullRequestResponse `json:"pr"`
+		}{PullRequest: pullRequest}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(response)
+
+	} else if err.Error() == "NOT_FOUND" {
+		utility.Err(w, http.StatusNotFound, "NOT_FOUND", "resource not found")
+	} else if err.Error() == "PR_EXISTS" {
+		utility.Err(w, http.StatusConflict, "PR_EXISTS", "PR id already exists")
+	}
+
 }
 
 func MergeRequest(w http.ResponseWriter, r *http.Request) {
