@@ -1,9 +1,11 @@
 package tests
 
 import (
+	"avito_tech_testing/dto"
 	"avito_tech_testing/repository"
 	"avito_tech_testing/service"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -72,6 +74,17 @@ func TestGetUserPullRequests(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("waiting 200, get:  %d", w.Code)
 	}
+
+	var userPR dto.UserPullRequests
+
+	if err := json.NewDecoder(w.Body).Decode(&userPR); err != nil {
+		t.Fatal("Problem with decode json:", err)
+	}
+
+	if len(userPR.PullRequests) != 1 {
+		t.Fatal("Waiting for 1, get:", len(userPR.PullRequests))
+	}
+
 }
 
 func TestGetUserPullRequestsUserNotExist(t *testing.T) {
