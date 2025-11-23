@@ -20,6 +20,8 @@ func mainController() {
 	http.HandleFunc("/team/get", service.GetTeamMembers)
 	http.HandleFunc("/team/add", service.CreateNewTeam)
 
+	http.HandleFunc("/stats", service.GetStats)
+
 }
 
 func mainPageHandler(w http.ResponseWriter, r *http.Request) {
