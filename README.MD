@@ -1,3 +1,7 @@
+## Описание
+Решение тестового задание:
+https://github.com/avito-tech/tech-internship/tree/main/Tech%20Internships/Backend/Backend-trainee-assignment-autumn-2025
+
 ## Запуск сервиса:
 1. docker-compose up (Сервер станет доступен по ссылке: http://localhost:8080)
 
